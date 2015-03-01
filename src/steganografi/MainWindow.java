@@ -5,6 +5,7 @@
  */
 package steganografi;
 
+import java.awt.FlowLayout;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -12,7 +13,10 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 /**
@@ -34,10 +38,15 @@ public class MainWindow extends javax.swing.JApplet {
     Stegano stego;
     FourDiffStego fourDiffStego;
     
+    boolean grayscale;
+    
     public MainWindow()
     {
         nineDiffStego = new NineDiffStego();
         stego = new Stegano();
+        fourDiffStego = new FourDiffStego();
+        
+        grayscale = false;
     }
     
     @Override
@@ -98,12 +107,15 @@ public class MainWindow extends javax.swing.JApplet {
         txtPassword = new javax.swing.JTextField();
         btnPutData = new javax.swing.JButton();
         btnPSNR = new javax.swing.JButton();
+        btnViewOriginal = new javax.swing.JButton();
+        btnViewStegano = new javax.swing.JButton();
+        checkGrayscale = new javax.swing.JCheckBox();
 
         jTextArea1.setColumns(20);
         jTextArea1.setRows(5);
         jScrollPane1.setViewportView(jTextArea1);
 
-        btnLoadGambar.setText("Load Gambar");
+        btnLoadGambar.setText("Load Picture");
         btnLoadGambar.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 btnLoadGambarMouseClicked(evt);
@@ -115,7 +127,7 @@ public class MainWindow extends javax.swing.JApplet {
             }
         });
 
-        jLabel1.setText("Algoritma: ");
+        jLabel1.setText("Algorithm:");
 
         cmbAlgoritma.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "LSB", "5 Pixel Diff", "9 Pixel Diff" }));
 
@@ -151,19 +163,35 @@ public class MainWindow extends javax.swing.JApplet {
             }
         });
 
+        btnViewOriginal.setText("View Original Picture");
+        btnViewOriginal.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                btnViewOriginalMouseClicked(evt);
+            }
+        });
+
+        btnViewStegano.setText("View Stegano Picture");
+        btnViewStegano.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                btnViewSteganoMouseClicked(evt);
+            }
+        });
+
+        checkGrayscale.setText("Grayscale");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(btnPSNR, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(btnPSNR, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                         .addComponent(jLabel3)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(txtPassword))
-                    .addGroup(layout.createSequentialGroup()
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addComponent(btnLoadGambar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(btnPutData, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -171,13 +199,20 @@ public class MainWindow extends javax.swing.JApplet {
                         .addComponent(jLabel2)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(txtKapasitas, javax.swing.GroupLayout.DEFAULT_SIZE, 135, Short.MAX_VALUE)
+                            .addComponent(txtKapasitas, javax.swing.GroupLayout.DEFAULT_SIZE, 165, Short.MAX_VALUE)
                             .addComponent(btnExtractData, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                    .addGroup(layout.createSequentialGroup()
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                         .addComponent(jLabel1)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(cmbAlgoritma, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(checkGrayscale))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(btnViewOriginal)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(btnViewStegano)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -203,9 +238,15 @@ public class MainWindow extends javax.swing.JApplet {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(btnExtractData)
                     .addComponent(btnPutData))
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(checkGrayscale)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 25, Short.MAX_VALUE)
                 .addComponent(btnPSNR)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(btnViewStegano)
+                    .addComponent(btnViewOriginal))
+                .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -247,6 +288,13 @@ public class MainWindow extends javax.swing.JApplet {
                         }
                     }
                     
+                    biCopy2 = new BufferedImage(image1.getWidth(), image1.getHeight(), BufferedImage.TYPE_INT_RGB);
+                    for (int x = 0; x < image1.getWidth(); x++) {
+                        for (int y = 0; y < image1.getHeight(); y++) {
+                            biCopy.setRGB(x, y, image1.getRGB(x, y));
+                        }
+                    }
+                    
                     stego.setImage(biCopy);
                 } else {
                     txtKapasitas.setText(Integer.toString(stego.getCapacityTrue() - 8));
@@ -262,7 +310,6 @@ public class MainWindow extends javax.swing.JApplet {
                 {
                     txtKapasitas.setText(Integer.toString(nineDiffStego.getCapacityGrayscale()));
                     
-                    txtKapasitas.setText(Integer.toString(stego.getCapacityGray()- 8));
                     biCopy = new BufferedImage(image1.getWidth(), image1.getHeight(), BufferedImage.TYPE_INT_RGB);
                     for (int x = 0; x < image1.getWidth(); x++) {
                         for (int y = 0; y < image1.getHeight(); y++) {
@@ -322,16 +369,30 @@ public class MainWindow extends javax.swing.JApplet {
                     bf.putInt(encrypted.length);
                     bf.put(encrypted);
                     
+                    //Cek kapasitas
+                        
+                    
                     if(image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
                     {
+                        if (bf.capacity() > stego.getCapacityGray())
+                        {
+                            JOptionPane.showMessageDialog(this, "Kapasitas tidak mencukupi");
+                            throw new RuntimeException("Kapasitas tidak mencukupi");
+                        }
                         stego.setImage(biCopy);
                         stego.insertDataGray(txtPassword.getText(), bf.array());
                     } else {
+                        if (bf.capacity() > stego.getCapacityTrue())
+                        {
+                            JOptionPane.showMessageDialog(this, "Kapasitas tidak mencukupi");
+                            throw new RuntimeException("Kapasitas tidak mencukupi");
+                        }
                         stego.insertData(txtPassword.getText(), bf.array());
                     }
                     fc.setDialogTitle("Save Stego Image");
                     fc.showSaveDialog(this);
                     ImageIO.write(stego.getImage(), "bmp", fc.getSelectedFile().getAbsoluteFile());
+                    image1 = stego.getImage();
                     break;
                 case 1:
                     bf = ByteBuffer.allocate(8 + encrypted.length);
@@ -369,13 +430,15 @@ public class MainWindow extends javax.swing.JApplet {
                     int size = fourDiffStego.getCapacity();
                     
                     if (bf.capacity() > size/8){
-                        System.out.println("Ukuran text terlalu besar");
+                        JOptionPane.showMessageDialog(this, "Kapasitas tidak mencukupi");
+                        throw new RuntimeException("Kapasitas tidak mencukupi");
                     }
                     else {
                       fourDiffStego.hideMessage();
                       fc.setDialogTitle("Save Output File");
                       fc.showSaveDialog(this);
                       ImageIO.write(fourDiffStego.getStegoImage(), "bmp", fc.getSelectedFile());
+                      image1 = fourDiffStego.getStegoImage();
                     }
                     break;
                 case 2:
@@ -396,13 +459,26 @@ public class MainWindow extends javax.swing.JApplet {
                     
                     if(image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
                     {
+                        if (bf.capacity() > nineDiffStego.getCapacityGrayscale())
+                        {
+                            JOptionPane.showMessageDialog(this, "Kapasitas tidak mencukupi");
+                            throw new RuntimeException("Kapasitas tidak mencukupi");
+                        }
+                        nineDiffStego.setImage(biCopy);
+                        nineDiffStego.setImage(biCopy2);
                         nineDiffStego.stegoGrayscale("hello", bf.array());
                     } else {
+                        if (bf.capacity() > nineDiffStego.getCapacity())
+                        {
+                            JOptionPane.showMessageDialog(this, "Kapasitas tidak mencukupi");
+                            throw new RuntimeException("Kapasitas tidak mencukupi");
+                        }
                         nineDiffStego.stego("hello", bf.array());
                     }
                     fc.setDialogTitle("Save Stego Image");
                     fc.showSaveDialog(this);
                     ImageIO.write(nineDiffStego.getImage(), "bmp", fc.getSelectedFile().getAbsoluteFile());
+                    image1 = nineDiffStego.getImage();
                     break;
             }
         } catch (Exception e)
@@ -426,11 +502,13 @@ public class MainWindow extends javax.swing.JApplet {
         switch (cmbAlgoritma.getSelectedIndex())
         {
             case 0:
+                stego.setImage(image1);
                 stego.setImage2(image1);
                 
-                if (image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
+                if (checkGrayscale.isSelected())
                 {
-                    stego.setImage2(biCopy);
+                    stego.setImage(image1);
+                    stego.setImage2(image1);
                     metadata = stego.extractDataGray(txtPassword.getText(), 96);
                 } else {
                     metadata = stego.extractData(txtPassword.getText(), 96);
@@ -448,7 +526,7 @@ public class MainWindow extends javax.swing.JApplet {
 
                 size = bf.getInt();
                 
-                if (image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
+                if (checkGrayscale.isSelected())
                 {
                     notStegoed = stego.extractDataGray(txtPassword.getText(), (size + 12) * 8);
                 } else {
@@ -492,7 +570,7 @@ public class MainWindow extends javax.swing.JApplet {
             case 2:
                 nineDiffStego.setImage(image1);
                 nineDiffStego.setImage2(image2);
-                if (image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
+                if (checkGrayscale.isSelected())
                 {
                     metadata = nineDiffStego.unStegoGrayscale("hello", 96);
                 } else {
@@ -510,7 +588,7 @@ public class MainWindow extends javax.swing.JApplet {
                 d = bf.getChar();
 
                 size = bf.getInt();
-                if (image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
+                if (checkGrayscale.isSelected())
                 {
                     notStegoed = nineDiffStego.unStegoGrayscale("hello", (size + 12) * 8);
                 } else {
@@ -561,18 +639,42 @@ public class MainWindow extends javax.swing.JApplet {
         fc.setDialogTitle("Select File 2");
         fc.showOpenDialog(this);
         File file2 = fc.getSelectedFile();
+        byte[] imageA = new byte[1];
+        byte[] imageB= new byte[1];
         
         try
         {
-            byte[] imageA = Files.readAllBytes(Paths.get(file1.getPath()));
-            byte[] imageB = Files.readAllBytes(Paths.get(file2.getPath()));
-            double psnr = stego.getPSNR(imageA, imageB);
+            imageA = Files.readAllBytes(Paths.get(file1.getPath()));
+            imageB = Files.readAllBytes(Paths.get(file2.getPath()));
+             double psnr = stego.getPSNR(imageA, imageB);
             JOptionPane.showMessageDialog(this, "Nilai PSNR:" + Double.toString(psnr));
+           
         } catch (Exception e)
         {   
-            JOptionPane.showMessageDialog(this, "Gagal menghitung PSNR: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Gagal menghitung PSNR: " + e.getMessage() + " Cause:"+ e.getCause());
         }
+        
     }//GEN-LAST:event_btnPSNRMouseClicked
+
+    private void btnViewOriginalMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnViewOriginalMouseClicked
+        // TODO add your handling code here:
+        JFrame frame = new JFrame();
+        frame.getContentPane().setLayout(new FlowLayout());
+        frame.getContentPane().add(new JLabel(new ImageIcon(image2)));
+        frame.setTitle("Original Picture");
+        frame.pack();
+        frame.setVisible(true);
+    }//GEN-LAST:event_btnViewOriginalMouseClicked
+
+    private void btnViewSteganoMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnViewSteganoMouseClicked
+        // TODO add your handling code here:
+        JFrame frame = new JFrame();
+        frame.getContentPane().setLayout(new FlowLayout());
+        frame.getContentPane().add(new JLabel(new ImageIcon(image1)));
+        frame.setTitle("Stegano Picture");
+        frame.pack();
+        frame.setVisible(true);
+    }//GEN-LAST:event_btnViewSteganoMouseClicked
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -580,6 +682,9 @@ public class MainWindow extends javax.swing.JApplet {
     private javax.swing.JButton btnLoadGambar;
     private javax.swing.JButton btnPSNR;
     private javax.swing.JButton btnPutData;
+    private javax.swing.JButton btnViewOriginal;
+    private javax.swing.JButton btnViewStegano;
+    private javax.swing.JCheckBox checkGrayscale;
     private javax.swing.JComboBox cmbAlgoritma;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;

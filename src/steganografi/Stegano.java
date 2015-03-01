@@ -204,7 +204,15 @@ public class Stegano {
     //Menghitung PSNR
     public double getPSNR(byte[] image1, byte[] image2){
         double rms=0;
-        int m=image1.length;
+        int m;
+        if (image1.length < image2.length)
+        {
+            m = image1.length;
+        } else {
+            m = image2.length;
+        }
+        
+        
         for (int i=0; i<m; i++){
                 int temp = (int) image1[i] - (int) image2[i]; 
                 rms += Math.pow(temp, 2);

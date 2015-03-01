@@ -28,7 +28,7 @@ public class Steganografi {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
-        frame.setSize(250, 250);
+        frame.setSize(370, 340);
         frame.show();
     }
 }
