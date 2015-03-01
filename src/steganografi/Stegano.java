@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package stegano;
+package steganografi;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -38,12 +38,12 @@ public class Stegano {
     }
     
     //Mendapatkan kapasistas data yang dapat disimpan pada gambar grayscale (dalam bit)
-    private int getCapacityGray(){
+    public int getCapacityGray(){
         return image.getHeight()*image.getWidth()-80;
     }
     
     //Mendapatkan kapasistas data yang dapat disimpan pada gambar truecolor (dalam bit)
-    private int getCapacityTrue(){
+    public int getCapacityTrue(){
         return image.getHeight()*image.getWidth()*3-80;
     }
     

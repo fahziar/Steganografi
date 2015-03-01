@@ -27,7 +27,11 @@ public class MainWindow extends javax.swing.JApplet {
     
     BufferedImage image1;
     BufferedImage image2;
+    BufferedImage biCopy;
+    BufferedImage biCopy2;
     NineDiffStego nineDiffStego;
+    Stegano stego;
+    
     @Override
     public void init() {
         /* Set the Nimbus look and feel */
@@ -151,11 +155,10 @@ public class MainWindow extends javax.swing.JApplet {
                             .addComponent(btnLoadGambar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(btnPutData, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addGap(18, 18, 18)
+                        .addComponent(jLabel2)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel2)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtKapasitas))
+                            .addComponent(txtKapasitas, javax.swing.GroupLayout.DEFAULT_SIZE, 135, Short.MAX_VALUE)
                             .addComponent(btnExtractData, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jLabel1)
@@ -205,6 +208,9 @@ public class MainWindow extends javax.swing.JApplet {
         // TODO add your handling code here:
         JFileChooser fc = new JFileChooser();
         
+        nineDiffStego = new NineDiffStego();
+        stego = new Stegano();
+        
         fc.setDialogTitle("Open Image");
         fc.showOpenDialog(this);
         try{
@@ -217,14 +223,52 @@ public class MainWindow extends javax.swing.JApplet {
         switch (cmbAlgoritma.getSelectedIndex())
         {
             case 0:
+                stego.setImage(image1);
+                if (image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
+                {
+                    txtKapasitas.setText(Integer.toString(stego.getCapacityGray()- 8));
+                    biCopy = new BufferedImage(image1.getWidth(), image1.getHeight(), BufferedImage.TYPE_INT_RGB);
+                    for (int x = 0; x < image1.getWidth(); x++) {
+                        for (int y = 0; y < image1.getHeight(); y++) {
+                            biCopy.setRGB(x, y, image1.getRGB(x, y));
+                        }
+                    }
+                    
+                    stego.setImage(biCopy);
+                } else {
+                    txtKapasitas.setText(Integer.toString(stego.getCapacityTrue() - 8));
+                }
+                
                 break;
             case 1:
                 break;
             case 2:
-                nineDiffStego = new NineDiffStego();
                 nineDiffStego.setImage(image1);
                 nineDiffStego.setImage2(image2);
-                txtKapasitas.setText(Integer.toString(nineDiffStego.getCapacity()));
+                if (image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
+                {
+                    txtKapasitas.setText(Integer.toString(nineDiffStego.getCapacityGrayscale()));
+                    
+                    txtKapasitas.setText(Integer.toString(stego.getCapacityGray()- 8));
+                    biCopy = new BufferedImage(image1.getWidth(), image1.getHeight(), BufferedImage.TYPE_INT_RGB);
+                    for (int x = 0; x < image1.getWidth(); x++) {
+                        for (int y = 0; y < image1.getHeight(); y++) {
+                            biCopy.setRGB(x, y, image1.getRGB(x, y));
+                        }
+                    }
+                    
+                    biCopy2 = new BufferedImage(image1.getWidth(), image1.getHeight(), BufferedImage.TYPE_INT_RGB);
+                    for (int x = 0; x < image1.getWidth(); x++) {
+                        for (int y = 0; y < image1.getHeight(); y++) {
+                            biCopy.setRGB(x, y, image1.getRGB(x, y));
+                        }
+                    }
+                    
+                    nineDiffStego.setImage(biCopy);
+                    nineDiffStego.setImage2(biCopy2);
+                } else {
+                    txtKapasitas.setText(Integer.toString(nineDiffStego.getCapacity()));
+                }
                 break;
         }
         
@@ -240,24 +284,66 @@ public class MainWindow extends javax.swing.JApplet {
         try
         {
             byte[] inputData = Files.readAllBytes(Paths.get(fc.getSelectedFile().getAbsolutePath()));
+            String[] splited = fc.getSelectedFile().getName().split("\\.");
             
             //Encrypt
             byte[] encrypted = VigenereCipher.vigenereExtendedEncryptBytes(txtPassword.getText(), inputData);
-            ByteBuffer bf = ByteBuffer.allocate(10 + encrypted.length );
+            ByteBuffer bf = ByteBuffer.allocate(12 + encrypted.length );
             
+            int i;
             switch (cmbAlgoritma.getSelectedIndex())
             {
                 case 0:
-                    break;
-                case 1:
-                    break;
-                case 2:
-                    bf.putChar('t');
-                    bf.putChar('x');
-                    bf.putChar('t');
+                    i=0;
+                    while((i<4) && (i < splited[splited.length - 1].length()))
+                    {
+                        bf.putChar(splited[splited.length - 1].charAt(i));
+                        i++;
+                    }
+                    
+                    for(;i<4;i++)
+                    {
+                        bf.putChar(' ');
+                    }
+                    
                     bf.putInt(encrypted.length);
                     bf.put(encrypted);
-                    nineDiffStego.stego("hello", bf.array());
+                    
+                    if(image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
+                    {
+                        stego.insertDataGray(txtPassword.getText(), bf.array());
+                    } else {
+                        stego.insertData(txtPassword.getText(), bf.array());
+                    }
+                    fc.setDialogTitle("Save Stego Image");
+                    fc.showSaveDialog(this);
+                    ImageIO.write(stego.getImage(), "bmp", fc.getSelectedFile().getAbsoluteFile());
+                    break;
+                case 1:
+                    
+                    break;
+                case 2:
+                    i=0;
+                    while((i<4) && (i < splited[splited.length - 1].length()))
+                    {
+                        bf.putChar(splited[splited.length - 1].charAt(i));
+                        i++;
+                    }
+                    
+                    for(;i<4;i++)
+                    {
+                        bf.putChar(' ');
+                    }
+                    
+                    bf.putInt(encrypted.length);
+                    bf.put(encrypted);
+                    
+                    if(image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
+                    {
+                        nineDiffStego.stegoGrayscale("hello", bf.array());
+                    } else {
+                        nineDiffStego.stego("hello", bf.array());
+                    }
                     fc.setDialogTitle("Save Stego Image");
                     fc.showSaveDialog(this);
                     ImageIO.write(nineDiffStego.getImage(), "bmp", fc.getSelectedFile().getAbsoluteFile());
@@ -271,51 +357,128 @@ public class MainWindow extends javax.swing.JApplet {
 
     private void btnExtractDataMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnExtractDataMouseClicked
         // TODO add your handling code here:
-        try {        
+        boolean success = true;
+        char a, b, c, d;
+        a = b = c = d = ' ';
+        
+        byte[] out = new byte[1];
+        byte[] metadata;
+        ByteBuffer bf, bf2;
+        int size, i;
+        byte[] notStegoed;
+        
         switch (cmbAlgoritma.getSelectedIndex())
         {
             case 0:
-                break;
-            case 1:
-                break;
-            case 2:
                 nineDiffStego.setImage(image1);
                 nineDiffStego.setImage2(image2);
-                byte[] metadata = nineDiffStego.unStego("hello", 80);
+                if (image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
+                {
+                    metadata = nineDiffStego.unStegoGrayscale("hello", 96);
+                } else {
+                    metadata = nineDiffStego.unStego("hello", 96);
+                }
             
-                ByteBuffer bf = ByteBuffer.allocate(11);
+                bf = ByteBuffer.allocate(13);
                 bf.put(metadata);
                 bf.flip();
-                char a, b, c;
-                int size;
+                
                 //bf.flip();
                 a = bf.getChar();
                 b = bf.getChar();
                 c = bf.getChar();
+                d = bf.getChar();
 
                 size = bf.getInt();
-                byte[] notStegoed = nineDiffStego.unStego("hello", (size + 10) * 8);
+                
+                if (image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
+                {
+                    notStegoed = nineDiffStego.unStegoGrayscale("hello", (size + 12) * 8);
+                } else {
+                    notStegoed = nineDiffStego.unStego("hello", (size + 12) * 8);
+                }
+                
                 bf.clear();
-                ByteBuffer bf2 = ByteBuffer.allocate(notStegoed.length);
+                bf2 = ByteBuffer.allocate(notStegoed.length);
                 bf2.put(notStegoed);
                 bf2.flip();
-                FileOutputStream fos = new FileOutputStream("D://halo2.txt");
+                
 
-                byte[] out = new byte[size];
+                out = new byte[size];
 
-                int i;
-                for(i=0; i<3;i++)
+                for(i=0; i<4;i++)
                 {
                     bf2.getChar();
                 }
                 bf2.getInt();
                 bf2.get(out);
-                fos.write(VigenereCipher.vigenereExtendedDecryptBytes(txtPassword.getText(), out));
+                
                 break;
-        }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Gagal membuka file: " + e.getMessage());
-        }
+            case 1:
+                
+                
+                break;
+            case 2:
+                nineDiffStego.setImage(image1);
+                nineDiffStego.setImage2(image2);
+                if (image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
+                {
+                    metadata = nineDiffStego.unStegoGrayscale("hello", 96);
+                } else {
+                    metadata = nineDiffStego.unStego("hello", 96);
+                }
+            
+                bf = ByteBuffer.allocate(13);
+                bf.put(metadata);
+                bf.flip();
+                                
+                //bf.flip();
+                a = bf.getChar();
+                b = bf.getChar();
+                c = bf.getChar();
+                d = bf.getChar();
+
+                size = bf.getInt();
+                if (image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
+                {
+                    notStegoed = nineDiffStego.unStegoGrayscale("hello", (size + 12) * 8);
+                } else {
+                    notStegoed = nineDiffStego.unStego("hello", (size + 12) * 8);
+                }
+                
+                bf.clear();
+                bf2 = ByteBuffer.allocate(notStegoed.length);
+                bf2.put(notStegoed);
+                bf2.flip();
+                
+                out = new byte[size];
+
+                for(i=0; i<4;i++)
+                {
+                    bf2.getChar();
+                }
+                bf2.getInt();
+                bf2.get(out);
+                
+                break;
+        } 
+        if (success)
+        {
+            try {
+                
+                JOptionPane.showMessageDialog(this, "Extensi file yang disimpan adalah:" + a + b + c + d);
+
+                JFileChooser fc = new JFileChooser();
+                fc.setDialogTitle("Save File");
+                fc.showSaveDialog(this);
+                FileOutputStream fos = new FileOutputStream("D://halo2.txt");
+                fos.write(VigenereCipher.vigenereExtendedDecryptBytes(txtPassword.getText(), out));
+                
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Gagal membuka file: " + e.getMessage());
+                success = false;
+            }
+        }       
     }//GEN-LAST:event_btnExtractDataMouseClicked
 
 
