@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package fourbyte;
+package steganografi;
 
 import static java.lang.Math.pow;
 
