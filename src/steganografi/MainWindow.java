@@ -29,8 +29,10 @@ public class MainWindow extends javax.swing.JApplet {
     BufferedImage image2;
     BufferedImage biCopy;
     BufferedImage biCopy2;
+    
     NineDiffStego nineDiffStego;
     Stegano stego;
+    FourDiffStego fourDiffStego;
     
     public MainWindow()
     {
@@ -332,7 +334,49 @@ public class MainWindow extends javax.swing.JApplet {
                     ImageIO.write(stego.getImage(), "bmp", fc.getSelectedFile().getAbsoluteFile());
                     break;
                 case 1:
+                    bf = ByteBuffer.allocate(8 + encrypted.length);
+                    i=0;
+                    while((i<4) && (i < splited[splited.length - 1].length()))
+                    {
+                        bf.putChar(splited[splited.length - 1].charAt(i));
+                        i++;
+                    }
                     
+                    for(;i<4;i++)
+                    {
+                        bf.putChar(' ');
+                    }
+                    bf.put(encrypted);
+                    
+                    bf.flip();
+                    String msg="";
+                    for (i =0; i<bf.capacity(); i++){
+                        msg += Integer.toBinaryString(bf.get()); //ubah pesan jadi String 10001011110
+                    }
+                    //EOF
+                    msg += Integer.toBinaryString(65);
+                    msg += Integer.toBinaryString(70);
+                    msg += Integer.toBinaryString(73);
+                    msg += Integer.toBinaryString(75);
+                    String msgsize  = Integer.toBinaryString(bf.capacity());
+                    fourDiffStego.setMessage(msg);
+                    System.out.println("msg len : " + msg.length() + " bit");
+                    System.out.println(msg);
+                    
+                    fourDiffStego.setCoverImage(image1);
+                    fourDiffStego.setStegoImage(image1);
+                    
+                    int size = fourDiffStego.getCapacity();
+                    
+                    if (bf.capacity() > size/8){
+                        System.out.println("Ukuran text terlalu besar");
+                    }
+                    else {
+                      fourDiffStego.hideMessage();
+                      fc.setDialogTitle("Save Output File");
+                      fc.showSaveDialog(this);
+                      ImageIO.write(fourDiffStego.getStegoImage(), "bmp", fc.getSelectedFile());
+                    }
                     break;
                 case 2:
                     i=0;
@@ -428,8 +472,22 @@ public class MainWindow extends javax.swing.JApplet {
                 
                 break;
             case 1:
+                String msg="100110011011111110010110";
+                fourDiffStego.setCoverImage(image1);
+                fourDiffStego.setStegoImage(image1);
+                msg = fourDiffStego.extractMessage();
+                System.out.println(msg);
+
+                String msgfinal;   
+                msgfinal = fourDiffStego.bitToText(msg);
                 
+                a = msgfinal.charAt(0);
+                b = msgfinal.charAt(1);
+                c = msgfinal.charAt(2);
+                d = msgfinal.charAt(3);
                 
+                out = msgfinal.substring(4).getBytes();
+                                
                 break;
             case 2:
                 nineDiffStego.setImage(image1);
