@@ -101,7 +101,42 @@ public class Stegano {
         this.image2 = image2;
     }
     
-    public  byte[] extractData(String key, int size){
+    
+    public void insertDataGray(String key, byte[] data){
+        int seed = 0;
+        for (char c: key.toCharArray()){
+            seed += (int) c;
+        }
+        Random rand = new Random(seed);
+        int h = image.getHeight(); int w = image.getWidth();
+        int i = abs(rand.nextInt()) % (h*w);
+        int row=0, col=0, savedRow=row, savedCol=col;
+        int processed=0, countBit=0, idx=0, currentBit;
+        int size = data.length*8;
+        System.out.println("Inserting data...");
+        do{ 
+            col = i%w; row = i/w; 
+            if (processed == size){break;}
+            if(countBit == 8){countBit=0; idx++;}
+            int rgb = image.getRGB(row, col);
+            currentBit = getBit(data[idx], countBit);
+            System.out.print(currentBit);
+            rgb = setBit(rgb, 0, currentBit);
+            processed++; countBit++;
+            
+            image.setRGB(row, col, rgb);
+            i = abs(rand.nextInt()) % (h*w);
+        } while (processed<size);
+    }
+    
+    public  byte[] extractDataGray(String key, int size){
+        int seed = 0;
+        for (char c: key.toCharArray()){
+            seed += (int) c;
+        }
+        Random rand = new Random(seed);
+        int h = image2.getHeight(); int w = image2.getWidth();
+        int i = abs(rand.nextInt()) % (h*w);
         byte out[] = new byte[(size / 8)];
         int row = 0;
         int col = 0;
@@ -112,9 +147,12 @@ public class Stegano {
         System.out.println();
         System.out.println("Extracting data...");
         do{
+            col = i%w; row = i/w;
+            System.out.println("" + col + " " + row);
             if (processed == size){break;}
             int rgb = image2.getRGB(row, col);
-            int currBit = getBit(rgb, 16);
+            int currBit = getBit(rgb, 0);
+            System.out.print(currBit);
             currData = (currBit << (processed % 8)) + currData;  
             processed++;
             if ((processed != 0) && (processed % 8 == 0)){
@@ -122,70 +160,12 @@ public class Stegano {
                 currData = 0;
                 curByte++;
             }
-            
-            if (processed == size){break;}
-            currBit = getBit(rgb, 8);
-            currData = (currBit << (processed % 8)) + currData;      
-            processed++;
-            if (processed % 8 == 0) {
-                out[curByte] = (byte) currData;
-                currData = 0;
-                curByte++;
-            }
-            if (processed == size){break;}
-            currBit = getBit(rgb, 0);
-            currData = (currBit << (processed % 8)) + currData;      
-            processed++;
-            if (processed % 8 == 0) {
-                out[curByte] = (byte) currData;
-                currData = 0;
-                curByte++;
-            }
-            col++;
-            if(col == image2.getWidth()){
-                col = 0;
-                row++;
-            }
+            i = abs(rand.nextInt()) % (h*w);
         } while (processed < size);
         return out;
     }
     
     public void insertData(String key, byte[] data){
-        int row=0, col=0, savedRow=row, savedCol=col;
-        int processed=0, countBit=0, idx=0, currentBit;
-        int size = data.length*8;
-        System.out.println("Inserting data...");
-        do{ 
-            if (processed == size){break;}
-            if(countBit == 8){countBit=0; idx++;}
-            int rgb = image.getRGB(row, col);
-            currentBit = getBit(data[idx], countBit);
-            rgb = setBit(rgb, 16, currentBit);
-            processed++; countBit++;
-            image.setRGB(row, col, rgb);
-            
-            if (processed == size){break;}
-            if(countBit == 8){countBit=0; idx++;}
-            currentBit = getBit(data[idx], countBit); 
-            rgb = setBit(rgb, 8, currentBit);
-            processed++; countBit++;
-            
-            if (processed == size){break;}
-            if(countBit == 8){countBit=0; idx++;}
-            currentBit = getBit(data[idx], countBit); 
-            rgb = setBit(rgb, 0, currentBit);
-            processed++; countBit++;
-            
-            image.setRGB(row, col, rgb);
-            col++;
-            if(col == image.getWidth()){
-                col = 0;
-                row++;
-            }
-        } while (processed<size);
-    }
-    
-    public void insertDataRand(String key, byte[] data){
         int seed = 0;
         for (char c: key.toCharArray()){
             seed += (int) c;
@@ -227,13 +207,13 @@ public class Stegano {
         } while (processed<size);
     }
     
-    public  byte[] extractDataRand(String key, int size){
+    public  byte[] extractData(String key, int size){
         int seed = 0;
         for (char c: key.toCharArray()){
             seed += (int) c;
         }
         Random rand = new Random(seed);
-        int h = image.getHeight(); int w = image.getWidth();
+        int h = image2.getHeight(); int w = image2.getWidth();
         int i = abs(rand.nextInt()) % (h*w);
         byte out[] = new byte[(size / 8)];
         int row = 0;
@@ -246,9 +226,8 @@ public class Stegano {
         System.out.println("Extracting data...");
         do{
             col = i%w; row = i/w;
-            System.out.println("" + col + " " + row);
             if (processed == size){break;}
-            int rgb = image.getRGB(row, col);
+            int rgb = image2.getRGB(row, col);
             int currBit = getBit(rgb, 16);
             System.out.print(currBit);
             currData = (currBit << (processed % 8)) + currData;  
@@ -271,7 +250,6 @@ public class Stegano {
             
             if (processed == size){break;}
             currBit = getBit(rgb, 0);
-            System.out.print(currBit);
             currData = (currBit << (processed % 8)) + currData;      
             processed++;
             if (processed % 8 == 0) {
@@ -297,6 +275,14 @@ public class Stegano {
         rms = sqrt(rms/(double)(m));
         System.out.println(rms);
         return 20 * Math.log10((double) 256/rms);
+    }
+    
+    private int getCapacityGray(){
+        return image.getHeight()*image.getWidth()-80;
+    }
+    
+    private int getCapacityTrue(){
+        return image.getHeight()*image.getWidth()*3-80;
     }
     
     private  int getBit(int input, int position)
