@@ -4,7 +4,6 @@
  * and open the template in the editor.
  */
 package steganografi;
-import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -34,17 +33,28 @@ public class NineDiffStego {
         
         if (pilihan == 1)
         {
-            File input = new File("D://lena512color.bmp");
-            Path path = Paths.get("D://input2A.txt");
+            File input = new File("D://lena512.bmp");
+            Path path = Paths.get("D://mpi_hostfile");
+            
             byte[] hiddenText = Files.readAllBytes(path);
-            System.out.println(Integer.toBinaryString(hiddenText[0]));
+            
             BufferedImage image = ImageIO.read(input);
             BufferedImage image2 = ImageIO.read(input);
+            
+            if (image.getType() == BufferedImage.TYPE_3BYTE_BGR)
+            {
+                System.out.println("Berwarna");
+            } else if (image.getType() == BufferedImage.TYPE_BYTE_GRAY)
+            {
+                System.out.println("Hitam putih");
+            }
             NineDiffStego ss = new NineDiffStego();
-
+            
+            System.out.println("Width:" + image.getWidth() + " Height" + image.getHeight());
             ss.setImage(image);
             ss.setImage2(image2);
-            System.out.println("Capacity: " + Integer.toString(ss.getCapacity() /8 / 1024));
+            System.out.println("NbTileX:" + ss.getNbTileX());
+            System.out.println("Capacity: " + Integer.toString(ss.getCapacityGrayscale() /8 / 1024));
             
             ByteBuffer bf = ByteBuffer.allocate(10 + hiddenText.length);
             bf.putChar('t');
@@ -58,10 +68,10 @@ public class NineDiffStego {
             {
                 System.out.println("File kegedean");
             } else {
-                ss.stego("hello", output);
+                ss.stegoGrayscale("hello", output);
             }
             
-            ImageIO.write(image, "bmp", new File("D://lena2.bmp"));
+            ImageIO.write(ss.getImage(), "bmp", new File("D://lena2.bmp"));
         } else {
             File input = new File("D://lena2.bmp");
         
@@ -69,10 +79,10 @@ public class NineDiffStego {
             BufferedImage image = ImageIO.read(input);
             BufferedImage image2 = ImageIO.read(input);
             NineDiffStego ss = new NineDiffStego();
-            
+                        
             ss.setImage(image);
             ss.setImage2(image2);
-            byte[] metadata = ss.unStego("hello", 80);
+            byte[] metadata = ss.unStegoGrayscale("hello", 80);
             
             ByteBuffer bf = ByteBuffer.allocate(11);
             bf.put(metadata);
@@ -85,7 +95,7 @@ public class NineDiffStego {
             c = bf.getChar();
             
             size = bf.getInt();
-            byte[] notStegoed = ss.unStego("hello", (size + 10) * 8);
+            byte[] notStegoed = ss.unStegoGrayscale("hello", (size + 10) * 8);
             bf.clear();
             ByteBuffer bf2 = ByteBuffer.allocate(notStegoed.length);
             bf2.put(notStegoed);
@@ -142,12 +152,12 @@ public class NineDiffStego {
     
     public int getNbTileX()
     {
-        return (image.getWidth() / 3) - 1;
+        return ((image.getWidth() - 1) / 3) - 2;
     }
     
     public int getNbTileY()
     {
-        return (image.getHeight() / 3) -1;
+        return ((image.getHeight() - 1)/ 3) - 2;
     }
     
     private int getBit(int input, int position)
@@ -189,17 +199,17 @@ public class NineDiffStego {
             throw new RuntimeException("Invalid Y");
         }
         
-        int min = getAveragePixel(x, y);
+        int min = getAveragePixel(x * 3, y * 3);
         int i, j;
         
         //Cari minimum
-        for(i=y*3; i<y*3+3; i++)
+        for(i=y*3; i<(y*3)+3; i++)
         {
-            for(j=x*3; j<x*3+3; j++)
+            for(j=x*3; j<(x*3)+3; j++)
             {
-                if(min > getAveragePixel(i, j))
+                if(min > getAveragePixel(j, i))
                 {
-                    min = getAveragePixel(i, j);
+                    min = getAveragePixel(j, i);
                 }
             }
         }
@@ -210,7 +220,7 @@ public class NineDiffStego {
         {
             for(j=x*3; j<x*3+3; j++)
             {
-                d = d + getAveragePixel(i, j) - min;
+                d = d + getAveragePixel(j, i) - min;
             }
         }
         
@@ -245,7 +255,7 @@ public class NineDiffStego {
         {
             throw new RuntimeException("Invalid Y");
         }
-        System.out.println("i:" + x + " j:" + y);
+        
         int capacity;
         switch(categorizeBlock(x, y))
         {
@@ -269,6 +279,41 @@ public class NineDiffStego {
         return capacity;
     }
     
+    public int getBlockCapacityGrayscale(int x, int y)
+    {
+        if (x >= getNbTileX())
+        {
+            throw new RuntimeException("Invalid X");
+        }
+        
+        if (y >= getNbTileY())
+        {
+            throw new RuntimeException("Invalid Y");
+        }
+        
+        int capacity;
+        switch(categorizeBlock(x, y))
+        {
+            case lowPixel:
+                capacity = 16;
+                break;
+            case midPixel:
+                capacity = 24;
+                break;
+            case hiPixel:
+                capacity = 32;
+                break;
+            case higherPixel:
+                capacity = 40;
+                break;
+            default:
+                capacity = 0;
+                break;
+        }
+        
+        return capacity;
+    }
+    
     //Kapasitas file, dalam bit
     public int getCapacity()
     {
@@ -280,8 +325,23 @@ public class NineDiffStego {
             for (j=0; j<getNbTileY(); j++)
             {
                 int nb = getNbTileY();
-                
                 capacity = capacity + getBlockCapacity(i, j);
+            }
+        }
+        return capacity;
+    }
+    
+    public int getCapacityGrayscale()
+    {
+        int capacity = 0;
+        int i, j;
+        
+        for (i=0; i<getNbTileX(); i++)
+        {
+            for (j=0; j<getNbTileY(); j++)
+            {
+                int nb = getNbTileY();
+                capacity = capacity + getBlockCapacityGrayscale(i, j);
             }
         }
         return capacity;
@@ -289,6 +349,7 @@ public class NineDiffStego {
     
     int getPixelCapacity(int x, int y)
     {
+        
         int currRgb = image.getRGB((x * 3) + 2, (y * 3) + 2);
         int bit1, bit2;
         
@@ -324,14 +385,26 @@ public class NineDiffStego {
         int posX = (x * 3) + (i % 3);
         int posY = (y * 3) + (i / 3);
         
+        if ((bit == 1) && (posX == 2) && (posY == 2) && (pos == 0))
+        {
+            System.out.println("Warning");
+        }
         int rgb = image.getRGB(posX, posY);
         
-        if ((posX == 57) && (posY == 52))
-        {
-            System.out.println("Diubah: " + x + " " +  y + " " + i + " " + pos);
-        }
-                        
         rgb = setBit(rgb, pos, bit);
+        image.setRGB(posX, posY, rgb );
+    }
+    
+    private void sisipBitGrayscale(int bit, int x, int y, int i, int pos)
+    {
+        int posX = (x * 3) + (i % 3);
+        int posY = (y * 3) + (i / 3);
+        
+        int rgb = image.getRGB(posX, posY);
+        
+        rgb = setBit(rgb, pos, bit);
+        rgb = setBit(rgb, pos + 8, bit);
+        rgb = setBit(rgb, pos + 16, bit);
         image.setRGB(posX, posY, rgb );
     }
     
@@ -342,10 +415,6 @@ public class NineDiffStego {
         
         int rgb = image.getRGB(posX, posY);
         
-        if ((posX == 57) && (posY == 52))
-        {
-            System.out.println("Diambil: " + x + " " +  y + " " + i + " " + pos + " " + Integer.toBinaryString(rgb));
-        }
         int out = (rgb >> pos) & 1;
         
         return out;
@@ -399,7 +468,7 @@ public class NineDiffStego {
         
     }
     
-    public void stego(String key, byte[] data)
+    public void stego(String key, byte[] data) throws Exception
     {
         int x = 0;
         int y = 0;
@@ -410,39 +479,39 @@ public class NineDiffStego {
         int pixelCapacity = 0;
         int blockPos = 0;
         int currColor = 0;
+        boolean gridSwitched = true;
         
         do
         {
-            int bitPerBlock = 0;
-            switch(categorizeBlock(x, y))
+            if (gridSwitched)
             {
-                case lowPixel:
-                    bitPerBlock = 16 * 3;
-                    pixelCapacity = 2;
-                    sisipBit(0, x, y, 8, 0);
-                    sisipBit(0, x, y, 8, 1);
-                    break;
-                case midPixel:
-                    bitPerBlock = 24 * 3;
-                    pixelCapacity = 3;
-                    sisipBit(1, x, y, 8, 0);
-                    sisipBit(0, x, y, 8, 1);
-                    break;
-                case hiPixel:
-                    bitPerBlock = 32 * 3;
-                    pixelCapacity = 4;
-                    sisipBit(0, x, y, 8, 0);
-                    sisipBit(1, x, y, 8, 1);
-                    break;
-                case higherPixel:
-                    bitPerBlock = 40 * 3;
-                    pixelCapacity = 5;
-                    sisipBit(1, x, y, 8, 0);
-                    sisipBit(1, x, y, 8, 1);
-                    break;
-                default:
-                    bitPerBlock = 0;
-                    break;
+                switch(categorizeBlock(x, y))
+                {
+                    case lowPixel:
+                        pixelCapacity = 2;
+                        sisipBit(0, x, y, 8, 0);
+                        sisipBit(0, x, y, 8, 1);
+                        break;
+                    case midPixel:
+                        pixelCapacity = 3;
+                        sisipBit(1, x, y, 8, 0);
+                        sisipBit(0, x, y, 8, 1);
+                        break;
+                    case hiPixel:
+                        pixelCapacity = 4;
+                        sisipBit(0, x, y, 8, 0);
+                        sisipBit(1, x, y, 8, 1);
+                        break;
+                    case higherPixel:
+                        pixelCapacity = 5;
+                        sisipBit(1, x, y, 8, 0);
+                        sisipBit(1, x, y, 8, 1);
+                        break;
+                    default:
+                        break;
+                }
+                
+                gridSwitched = false;
             }
             
                                   
@@ -455,12 +524,7 @@ public class NineDiffStego {
             temp = image.getRGB(x*3, y*3);
             processed++;
             pixelUsedSpace++;
-            if ((processed / 8 >= 32068) && (processed % 8 == 0))
-            {
-               // System.out.println("Break");
-            }
-            
-            
+                                
             if (pixelUsedSpace == pixelCapacity)
             {
                 adjust(x, y, blockPos, pixelCapacity, currColor);
@@ -474,6 +538,7 @@ public class NineDiffStego {
                     {
                         y++;
                         blockPos = 0;
+                        gridSwitched = true;
                         if(y == getNbTileY())
                         {
                             x++;
@@ -482,6 +547,87 @@ public class NineDiffStego {
                     }
                 }
             }
+        } while (processed < data.length * 8);
+       
+    }
+    
+    public void stegoGrayscale(String key, byte[] data) throws Exception
+    {
+        int x = 0;
+        int y = 0;
+                
+        int processed = 0;
+        int blockUsedSpace = 0;
+        int pixelUsedSpace = 0;
+        int pixelCapacity = 0;
+        int blockPos = 0;
+        int currColor = 0;
+        boolean gridSwitched = true;
+        
+        do
+        {
+            if (gridSwitched)
+            {
+                switch(categorizeBlock(x, y))
+                {
+                    case lowPixel:
+                        pixelCapacity = 2;
+                        //Blue
+                        sisipBitGrayscale(0, x, y, 8, 0);
+                        sisipBitGrayscale(0, x, y, 8, 1);
+                                                                       
+                        break;
+                    case midPixel:
+                        pixelCapacity = 3;
+                        sisipBitGrayscale(1, x, y, 8, 0);
+                        sisipBitGrayscale(0, x, y, 8, 1);
+                        break;
+                    case hiPixel:
+                        pixelCapacity = 4;
+                        sisipBitGrayscale(0, x, y, 8, 0);
+                        sisipBitGrayscale(1, x, y, 8, 1);
+                        break;
+                    case higherPixel:
+                        pixelCapacity = 5;
+                        sisipBitGrayscale(1, x, y, 8, 0);
+                        sisipBitGrayscale(1, x, y, 8, 1);
+                        break;
+                    default:
+                        break;
+                }
+                
+                gridSwitched = false;
+            }
+            
+                                  
+            int currData = data[processed / 8];
+            int currBit = getBit(currData, processed % 8);
+            
+            int temp = image.getRGB(x*3, y*3);
+            sisipBitGrayscale(currBit, x, y, blockPos, pixelUsedSpace);
+            
+            temp = image.getRGB(x*3, y*3);
+            processed++;
+            pixelUsedSpace++;
+            
+            if (pixelUsedSpace == pixelCapacity)
+            {
+                //adjust(x, y, blockPos, pixelCapacity, currColor);
+                pixelUsedSpace = 0;
+                blockPos++;
+                if (blockPos == 8)
+                {
+                    y++;
+                    blockPos = 0;
+                    gridSwitched = true;
+                    if(y == getNbTileY())
+                    {
+                        x++;
+                        y = 0;
+                    }
+               }
+            }
+            
         } while (processed < data.length * 8);
        
     }
@@ -518,14 +664,9 @@ public class NineDiffStego {
             }
             pixelUsedSpace++;
             
-            if ((processed / 8 >= 32068) && (processed % 8 == 0))
-            {
-                //System.out.println("Break");
-            }
-            
             if (pixelUsedSpace == pixelCapacity)
             {
-                adjust(x, y, blockPos, pixelCapacity, currColor);
+                //adjust(x, y, blockPos, pixelCapacity, currColor);
                 currColor++;
                 pixelUsedSpace = 0;
                 
@@ -548,6 +689,64 @@ public class NineDiffStego {
                     }
                 }
             }
+        } while (processed < size);
+        
+        return out;
+    }
+    
+    public byte[] unStegoGrayscale(String key, int size)
+    {
+        byte out[] = new byte[(size / 8) + 1];
+        int x = 0;
+        int y = 0;
+                
+        int processed = 0;
+        int blockUsedSpace = 0;
+        int pixelUsedSpace = 0;
+        int pixelCapacity = 0;
+        int blockPos = 0;
+        int currColor = 0;
+        int currData = 0;
+        int curByte = 0;
+        
+        do
+        {
+            int bitPerBlock = 0;
+            pixelCapacity = getPixelCapacity(x, y);
+                        
+            int currBit = ambilBit(x, y, blockPos, pixelUsedSpace);
+            currData = (currBit << (processed % 8)) + currData;
+                        
+            processed++;
+            if (processed % 8 == 0)
+            {
+                out[curByte] = (byte) currData;
+                currData = 0;
+                curByte++;
+            }
+            pixelUsedSpace++;
+            
+            if (pixelUsedSpace == pixelCapacity)
+            {
+                //adjust(x, y, blockPos, pixelCapacity, currColor);
+                pixelUsedSpace = 0;
+                
+                //transformasi
+                
+                blockPos++;
+                currColor = 0;
+                if (blockPos == 8)
+                {
+                    y++;
+                    blockPos = 0;
+                    if(y == getNbTileY())
+                    {
+                        x++;
+                        y = 0;
+                    }
+                }
+            }
+
         } while (processed < size);
         
         return out;
