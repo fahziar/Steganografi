@@ -4,12 +4,13 @@
  * and open the template in the editor.
  */
 
+package fourbyte;
 
-package steganografi;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import static java.lang.Math.sqrt;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,7 +38,7 @@ public class FourDiffStego {
         {
             FourDiffStego fd = new FourDiffStego();
             
-            Path path = Paths.get("D:\\AFIK\\Project\\Steganografi\\lorem_2.txt");
+            Path path = Paths.get("D:\\AFIK\\Project\\Steganografi\\lorem_3.txt");
             byte[] hiddenText = Files.readAllBytes(path);
             String msg="";
             for (int i =0; i<hiddenText.length; i++){
@@ -57,6 +58,7 @@ public class FourDiffStego {
             BufferedImage cover = ImageIO.read(input);
             fd.setCoverImage(cover);
             fd.setStegoImage(cover);
+            System.out.println(fd.coverImage.getWidth());
             int size = fd.getCapacity();
             System.out.println("Ukuran gambar : " + cover.getWidth() + " " + cover.getHeight());
             System.out.println("Size : " + size + " bit; " + size/8 + " byte");
@@ -66,17 +68,21 @@ public class FourDiffStego {
             }
             else {
               fd.hideMessage();
-              ImageIO.write(fd.getStegoImage(), "bmp", new File("D:\\AFIK\\Project\\Steganografi\\lena_out.bmp"));
+              ImageIO.write(fd.stegoImage, "bmp", new File("D:\\AFIK\\Project\\Steganografi\\lena_out.bmp"));
+              byte[] t = Files.readAllBytes(Paths.get("D:\\AFIK\\Project\\Steganografi\\lena.bmp"));
+              byte[] h = Files.readAllBytes(Paths.get("D:\\AFIK\\Project\\Steganografi\\lena_out.bmp"));
+              double psnr = fd.getPSNR(t, h);
+              System.out.println("PSNR = " + psnr);
             }
         }
         else if (pilihan == 2) {
             FourDiffStego fd = new FourDiffStego();
             File input = new File("D:\\AFIK\\Project\\Steganografi\\lena_out.bmp");
-            String msg="100110011011111110010110";
+            String msg="";
             BufferedImage cover = ImageIO.read(input);
             fd.setCoverImage(cover);
             fd.setStegoImage(cover);
-            //msg = fd.extractMessage();
+            msg = fd.extractMessage();
             System.out.println(msg);
             
             String msgfinal;   
@@ -102,18 +108,15 @@ public class FourDiffStego {
                     newR = error; newB = error; newG = error;
                     if (!bf.isErrorBlock(returnRBlock(0,j,i))){
                         bf.setY(returnRBlock(1,j,i));
-//                        System.out.println("oldR = " + bf.getY()[0] + " " + bf.getY()[1] + " " + bf.getY()[2]+ " " + bf.getY()[3]);
                         size = bf.getSizeAvailable();
                         if (offset+size< message.length()){
                             msg = message.substring(offset, offset+size);
                             offset += size;
                             msglen -= size;
-//                            System.out.println("msgR: "+ size + " " +msg + " " + msglen);
                             bf.setMessage(msg);
                             bf.hideMessage();
                             newR = bf.getYt().clone();
                             bf.setY(error);
-//                            System.out.println("newR : " + newR[0] + " " + newR[1]+ " " + newR[2]+ " " + newR[3]);
                         }
                         else {
                             System.out.println("Pesan habis");
@@ -124,18 +127,15 @@ public class FourDiffStego {
                     
                     if (!bf.isErrorBlock(returnGBlock(j,i))){
                         bf.setY(returnGBlock(j,i));
-//                        System.out.println("oldG = " + bf.getY()[0] + " " + bf.getY()[1] + " " + bf.getY()[2]+ " " + bf.getY()[3]);
                         size = bf.getSizeAvailable();
                         if (offset+size< message.length()){
                             msg = message.substring(offset, offset+size);
                             offset += size;
                             msglen -= size;
-//                            System.out.println("msgG " + size + " " +msg + " " + msglen);
                             bf.setMessage(msg);
                             bf.hideMessage();
                             newG = bf.getYt().clone();
                             bf.setY(error);
-//                            System.out.println("newG : " + newG[0] + " " + newG[1]+ " " + newG[2]+ " " + newG[3]);
                         }
                         else {
                             System.out.println("Pesan habis");
@@ -145,17 +145,14 @@ public class FourDiffStego {
                     
                     if (!bf.isErrorBlock(returnBBlock(j,i))){
                         bf.setY(returnBBlock(j,i));
-//                        System.out.println("oldB = " + bf.getY()[0] + " " + bf.getY()[1] + " " + bf.getY()[2]+ " " + bf.getY()[3]);
                         size = bf.getSizeAvailable();
                         if (offset+size< message.length()){
                             msg = message.substring(offset, offset+size);
                             offset += size;
                             msglen -= size;
-//                            System.out.println("msgB : " +size + " " +msg + " " + msglen);
                             bf.setMessage(msg);
                             bf.hideMessage();
                             newB = bf.getYt().clone();
-//                            System.out.println("newB : " + newB[0] + " " + newB[1]+ " " + newB[2]+ " " + newB[3]);
                         }
                         else {
                             stop = true;
@@ -164,23 +161,9 @@ public class FourDiffStego {
                     }
         
                     setBlock(j,i,newR,newG,newB);
-                    /*
-                    bf.setY(returnRBlockS(j,i));
-                    exmsg+=bf.returnMessage();
-                    
-                    bf.setY(returnGBlockS(j,i));
-                    exmsg+=bf.returnMessage();
-                    
-                    bf.setY(returnBBlockS(j,i));
-                    exmsg+=bf.returnMessage();
-                    
-                    System.out.println(exmsg);*/
+                   
                 }
-//                if (j == 2) 
-                //break;
             }
-//            if (i == 2) 
-            //break;
         }
         
     }
@@ -189,13 +172,12 @@ public class FourDiffStego {
         String msg="";
         int lenprev=0, addlen=0;
         boolean EOF = false;
-        for (int i=0; i<getStegoImage().getHeight(); i+=2) {
-            for (int j=0; j<getStegoImage().getWidth(); j+=2) {
-                if((getStegoImage().getHeight() > i+1) && (getStegoImage().getWidth() > j+1) && !EOF){
+        for (int i=0; i<stegoImage.getHeight(); i+=2) {
+            for (int j=0; j<stegoImage.getWidth(); j+=2) {
+                if((stegoImage.getHeight() > i+1) && (stegoImage.getWidth() > j+1) && !EOF){
                     System.out.println(i + " " + j);
                     if (!bf.isErrorBlock(returnRBlockS(j,i))){
                         bf.setY(returnRBlockS(j,i));
-//                        System.out.println("Pesan R: " + bf.returnMessage() + " " + Integer.parseInt(bf.returnMessage()));
                         msg+=bf.returnMessage();
                         addlen +=bf.returnMessage().length();
                     }
@@ -203,14 +185,12 @@ public class FourDiffStego {
                     
                     if (!bf.isErrorBlock(returnGBlockS(j,i))){
                         bf.setY(returnGBlockS(j,i));
-//                        System.out.println("Pesan G : " +bf.returnMessage() +  " " + Integer.parseInt(bf.returnMessage()));
                         msg+=bf.returnMessage();
                         addlen +=bf.returnMessage().length();
                     }
                     
                     if (!bf.isErrorBlock(returnBBlockS(j,i))){
                         bf.setY(returnBBlockS(j,i));
-//                        System.out.println("Pesan B : " +bf.returnMessage() + " " + Integer.parseInt(bf.returnMessage()));
                         msg+=bf.returnMessage();
                         addlen +=bf.returnMessage().length();
                     }
@@ -219,13 +199,24 @@ public class FourDiffStego {
                     lenprev += addlen;
                     addlen = 0;
                 }
-                //break;
             }
-            //break;
         }
         return msg;
     }
     
+    public double getPSNR(byte[] image1, byte[] image2){
+        double rms=0;
+        int m=image1.length;
+        for (int i=0; i<m; i++){
+                int temp = (int) image1[i] - (int) image2[i]; 
+                rms += Math.pow(temp, 2);
+        }
+        System.out.println(rms);
+        System.out.println(m);
+        rms = sqrt(rms/(double)(m));
+        System.out.println(rms);
+        return 20 * Math.log10((double) 256/rms);
+    }
     
     public String bitToText(String bit){
         String result = "";
@@ -236,7 +227,6 @@ public class FourDiffStego {
         }
         while(bit.length()>0){
                 bitProcess = bit.substring(0,8);
-                //System.out.println(bitProcess);
                 ascii = Integer.parseInt(bitProcess,2);
                 result += (char)ascii;
                 bit = bit.substring(8);
@@ -296,20 +286,16 @@ public class FourDiffStego {
         int RGB;
         Color color1 = new Color(R[0],G[0],B[0]);
         RGB = color1.getRGB();
-//        System.out.println(" set : " + Integer.toBinaryString(RGB));
-        getStegoImage().setRGB(x, y, RGB);
+        stegoImage.setRGB(x, y, RGB);
         Color color2 = new Color(R[1],G[1],B[1]);
         RGB = color2.getRGB();
-//        System.out.println(" set : " + Integer.toBinaryString(RGB));
-        getStegoImage().setRGB(x+1, y, RGB);
+        stegoImage.setRGB(x+1, y, RGB);
         Color color3 = new Color(R[2],G[2],B[2]);
         RGB = color3.getRGB();
-//        System.out.println(" set : " + Integer.toBinaryString(RGB));
-        getStegoImage().setRGB(x, y+1, RGB);
+        stegoImage.setRGB(x, y+1, RGB);
         Color color4 = new Color(R[3],G[3],B[3]);
         RGB = color4.getRGB();
-//        System.out.println(" set : " + Integer.toBinaryString(RGB));
-        getStegoImage().setRGB(x+1, y+1, RGB);
+        stegoImage.setRGB(x+1, y+1, RGB);
     }
     
         //untuk hide
@@ -389,10 +375,10 @@ public class FourDiffStego {
         int[] RBlock = new int[4];
         int pixel1, pixel2, pixel3, pixel4;
         
-        pixel1 = getStegoImage().getRGB(offsetx, offsety);
-        pixel2 = getStegoImage().getRGB(offsetx+1, offsety);
-        pixel3 = getStegoImage().getRGB(offsetx, offsety+1);
-        pixel4 = getStegoImage().getRGB(offsetx+1, offsety+1);
+        pixel1 = stegoImage.getRGB(offsetx, offsety);
+        pixel2 = stegoImage.getRGB(offsetx+1, offsety);
+        pixel3 = stegoImage.getRGB(offsetx, offsety+1);
+        pixel4 = stegoImage.getRGB(offsetx+1, offsety+1);
         //System.out.println("pixel4 : " + pixel4 + " " + Integer.toBinaryString(pixel1));
         
         RBlock[0]=(pixel1 >> 16) & 0x000000FF;
@@ -412,11 +398,11 @@ public class FourDiffStego {
         int[] GBlock = new int[4];
         int pixel1, pixel2, pixel3, pixel4;
         
-         pixel1 = getStegoImage().getRGB(offsetx, offsety);
+         pixel1 = stegoImage.getRGB(offsetx, offsety);
         //System.out.println("pixel1 : " + pixel1 + " " + Integer.toBinaryString(pixel1));
-        pixel2 = getStegoImage().getRGB(offsetx+1, offsety);
-        pixel3 = getStegoImage().getRGB(offsetx, offsety+1);
-        pixel4 = getStegoImage().getRGB(offsetx+1, offsety+1);
+        pixel2 = stegoImage.getRGB(offsetx+1, offsety);
+        pixel3 = stegoImage.getRGB(offsetx, offsety+1);
+        pixel4 = stegoImage.getRGB(offsetx+1, offsety+1);
         
         GBlock[0]=(pixel1 >> 8) & 0x000000FF;
         //System.out.println(" Green After shift : " + GBlock[0] + " " + Integer.toBinaryString(GBlock[0]));
@@ -433,11 +419,11 @@ public class FourDiffStego {
         int[] BBlock = new int[4];
         int pixel1, pixel2, pixel3, pixel4;
         
-        pixel1 = getStegoImage().getRGB(offsetx, offsety);
+        pixel1 = stegoImage.getRGB(offsetx, offsety);
         //System.out.println("pixel1 : " + pixel1 + " " + Integer.toBinaryString(pixel1));
-        pixel2 = getStegoImage().getRGB(offsetx+1, offsety);
-        pixel3 = getStegoImage().getRGB(offsetx, offsety+1);
-        pixel4 = getStegoImage().getRGB(offsetx+1, offsety+1);
+        pixel2 = stegoImage.getRGB(offsetx+1, offsety);
+        pixel3 = stegoImage.getRGB(offsetx, offsety+1);
+        pixel4 = stegoImage.getRGB(offsetx+1, offsety+1);
         
         BBlock[0]=pixel1 & 0x000000FF;
         //System.out.println(" Blue After shift : " + BBlock[0] + " " + Integer.toBinaryString(BBlock[0]));

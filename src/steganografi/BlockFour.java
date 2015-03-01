@@ -1,12 +1,10 @@
-package steganografi;
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 
-
+package fourbyte;
 
 import static java.lang.Math.pow;
 
@@ -54,11 +52,6 @@ public class BlockFour {
         System.out.println("Hasil modified : " + fb.getY2()[0] + "," + fb.getY2()[1] + "," + fb.getY2()[2] + "," + fb.getY2()[3]);
         System.out.println("Hasil akhir : " + fb.getYt()[0] + "," + fb.getYt()[1] + "," + fb.getYt()[2] + "," + fb.getYt()[3]);
         
-        //System.out.println(Integer.toBinaryString(fb.getYt()[0]));
-        //System.out.println(Integer.toBinaryString(fb.getYt()[1]));
-        //System.out.println(Integer.toBinaryString(fb.getYt()[2]));
-        //System.out.println(Integer.toBinaryString(fb.getYt()[3]));
-        
         fb.setY(fb.getYt());
         String pesan = fb.returnMessage();
         System.out.println("Hasil ekstraksi pesan : " + pesan);
@@ -89,14 +82,12 @@ public class BlockFour {
                 }
                 cur = temp + cur;
             }
-            //System.out.println(cur + " " + y[i]);
             message+=cur.substring(cur.length()-key,cur.length());
         }
         return message;
     }
     
     public void LSBNormal() {
-        //System.out.println("Debugging Normal");
         int curvalue;
         int[] partmsg = new int[4];
         partmsg[0] = Integer.parseInt(message.substring(0, message.length()/4),2);
@@ -139,11 +130,8 @@ public class BlockFour {
                 }
                 sval = tsval + sval;
             }
-            //System.out.println("sval: " + sval);
             sLSB = sval.substring(sval.length()-key,sval.length());
-            //System.out.println("sLSB: " + sLSB);
             MSB = y1[i]/(int)(pow(2,key));
-            //System.out.println("MSB : " + MSB);
             sMSB = Integer.toBinaryString(MSB);
             sMSB1 = Integer.toBinaryString(MSB+1);
             sMSB1m = Integer.toBinaryString(MSB-1);
@@ -159,35 +147,24 @@ public class BlockFour {
             if (min > Math.abs(res1-y[i])){
                 if (Math.abs(res1-y[i]) > Math.abs(res1m-y[i])) {
                     y2[i]=res1m;
-                    //System.out.println(i + " minus 1"); 
-                   
                 }
                 else { 
                     y2[i]=res1;
-                    //System.out.println(i + " plus 1"); 
-                   
                 }
             }
             else if (min > Math.abs(res1m-y[i])) {
                 if (Math.abs(res1m-y[i]) > Math.abs(res1-y[i])) {
                    y2[i]=res1;
-                   //System.out.println(i + " plus 1"); 
-                   
                 }
                 else { 
                     y2[i]=res1m;
-                    //System.out.println(i + " minus 1"); 
-                   
                 }
             }
             else {
                 y2[i]=res0;
-                //System.out.println(i + " tetap"); 
                    
             }
-           //System.out.println();
         }
-         //System.out.println("y2 " + y2[0] + " " + y2[1] + " " + y2[2] + " " + y2[3]);    
             
     }
     
@@ -211,24 +188,12 @@ public class BlockFour {
 
         }
         
-        //System.out.println("list1 : " + list1[0] + " " + list1[1] +" " + list1[2] +" " +list1[3]);
-        //System.out.println("list2 : " + list2[0] + " " + list2[1] +" " + list2[2] +" " +list2[3]);
-        //System.out.println("list3 : " + list3[0] + " " + list3[1] +" " + list3[2] +" " +list3[3]);
-        
         _y0[0] = list1[0]; _y0[1] = list2[0]; _y0[2] = list3[0];
         _y1[0] = list1[1]; _y1[1] = list2[1]; _y1[2] = list3[1];
         _y2[0] = list1[2]; _y2[1] = list2[2]; _y2[2] = list3[2];
         _y3[0] = list1[3]; _y3[1] = list2[3]; _y3[2] = list3[3];
         
-        //System.out.println("y0 : " + _y0[0] + " " + _y0[1] +" " + _y0[2]);
-        //System.out.println("y1 : " + _y1[0] + " " + _y1[1] +" " + _y1[2]);
-        //System.out.println("y2 : " + _y2[0] + " " + _y2[1] +" " + _y2[2]);
-        //System.out.println("y3 : " + _y3[0] + " " + _y3[1] +" " + _y3[2]);
-        
         diff = 1000; tdiff = 1000;
-        
-        //System.out.println("brute awal; " +brute[0]+ " " +brute[1] +" "+brute[2]+" "+brute[3]);
-        //System.out.println("Diff : " + diff + " tdiff : " + tdiff);
         
         for (int i =0; i<3; i++){
             for (int j=0; j<3; j++) {
@@ -238,10 +203,6 @@ public class BlockFour {
                         brute[1] = _y1[j];
                         brute[2] = _y2[k];
                         brute[3] = _y3[l];
-                        
-                        //System.out.println();
-                        //System.out.println("brute; " +brute[0]+ " " +brute[1] +" "+brute[2]+" "+brute[3]);
-                        //System.out.println("Diff : " + diff + " tdiff : " + tdiff);
         
                         if (getAverageD(brute)<=threshold) {
                             kelasku = 0;
@@ -251,13 +212,10 @@ public class BlockFour {
                         }
                                 
                         if (!isErrorBlock(brute)) {
-                            //System.out.println("ngga error");
                             if (kelasku == kelas) {
-                                //System.out.println("memenuhi : " +i+ " " +j +" "+k+" "+l);
                                 tdiff = getDiff(brute,y);
                             }
                             if (diff > tdiff) {
-                                //System.out.println("diff baru");
                                 diff = tdiff;
                                 result[0]=i;result[1]=j;result[2]=k;result[3]=l;
                             }
@@ -267,8 +225,6 @@ public class BlockFour {
             }
         }
         yt[0] = _y0[result[0]]; yt[1] = _y1[result[1]]; yt[2] = _y2[result[2]]; yt[3] = _y3[result[3]];
-        //System.out.println("Result : " + yt[0] + " " + yt[1] + " " +yt[2] + " " +yt[3]);
-        
     }
     
     public int getDiff(int[] yf, int[] y0){
