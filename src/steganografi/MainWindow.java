@@ -32,6 +32,12 @@ public class MainWindow extends javax.swing.JApplet {
     NineDiffStego nineDiffStego;
     Stegano stego;
     
+    public MainWindow()
+    {
+        nineDiffStego = new NineDiffStego();
+        stego = new Stegano();
+    }
+    
     @Override
     public void init() {
         /* Set the Nimbus look and feel */
@@ -137,6 +143,11 @@ public class MainWindow extends javax.swing.JApplet {
         });
 
         btnPSNR.setText("PSNR");
+        btnPSNR.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                btnPSNRMouseClicked(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -311,6 +322,7 @@ public class MainWindow extends javax.swing.JApplet {
                     
                     if(image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
                     {
+                        stego.setImage(biCopy);
                         stego.insertDataGray(txtPassword.getText(), bf.array());
                     } else {
                         stego.insertData(txtPassword.getText(), bf.array());
@@ -370,13 +382,14 @@ public class MainWindow extends javax.swing.JApplet {
         switch (cmbAlgoritma.getSelectedIndex())
         {
             case 0:
-                nineDiffStego.setImage(image1);
-                nineDiffStego.setImage2(image2);
+                stego.setImage2(image1);
+                
                 if (image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
                 {
-                    metadata = nineDiffStego.unStegoGrayscale("hello", 96);
+                    stego.setImage2(biCopy);
+                    metadata = stego.extractDataGray(txtPassword.getText(), 96);
                 } else {
-                    metadata = nineDiffStego.unStego("hello", 96);
+                    metadata = stego.extractData(txtPassword.getText(), 96);
                 }
             
                 bf = ByteBuffer.allocate(13);
@@ -393,9 +406,9 @@ public class MainWindow extends javax.swing.JApplet {
                 
                 if (image1.getType() == BufferedImage.TYPE_BYTE_GRAY)
                 {
-                    notStegoed = nineDiffStego.unStegoGrayscale("hello", (size + 12) * 8);
+                    notStegoed = stego.extractDataGray(txtPassword.getText(), (size + 12) * 8);
                 } else {
-                    notStegoed = nineDiffStego.unStego("hello", (size + 12) * 8);
+                    notStegoed = stego.extractData(txtPassword.getText(), (size + 12) * 8);
                 }
                 
                 bf.clear();
@@ -471,7 +484,7 @@ public class MainWindow extends javax.swing.JApplet {
                 JFileChooser fc = new JFileChooser();
                 fc.setDialogTitle("Save File");
                 fc.showSaveDialog(this);
-                FileOutputStream fos = new FileOutputStream("D://halo2.txt");
+                FileOutputStream fos = new FileOutputStream(fc.getSelectedFile().getAbsoluteFile().getAbsolutePath());
                 fos.write(VigenereCipher.vigenereExtendedDecryptBytes(txtPassword.getText(), out));
                 
             } catch (Exception e) {
@@ -480,6 +493,28 @@ public class MainWindow extends javax.swing.JApplet {
             }
         }       
     }//GEN-LAST:event_btnExtractDataMouseClicked
+
+    private void btnPSNRMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnPSNRMouseClicked
+        // TODO add your handling code here:
+        JFileChooser fc = new JFileChooser();
+        fc.setDialogTitle("Select File 1");
+        fc.showOpenDialog(this);
+        File file1 = fc.getSelectedFile();
+        fc.setDialogTitle("Select File 2");
+        fc.showOpenDialog(this);
+        File file2 = fc.getSelectedFile();
+        
+        try
+        {
+            byte[] imageA = Files.readAllBytes(Paths.get(file1.getPath()));
+            byte[] imageB = Files.readAllBytes(Paths.get(file2.getPath()));
+            double psnr = stego.getPSNR(imageA, imageB);
+            JOptionPane.showMessageDialog(this, "Nilai PSNR:" + Double.toString(psnr));
+        } catch (Exception e)
+        {   
+            JOptionPane.showMessageDialog(this, "Gagal menghitung PSNR: " + e.getMessage());
+        }
+    }//GEN-LAST:event_btnPSNRMouseClicked
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
