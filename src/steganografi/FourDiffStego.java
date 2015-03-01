@@ -52,9 +52,9 @@ public class FourDiffStego {
             String msgsize  = Integer.toBinaryString(hiddenText.length);
             fd.setMessage(msg);
             System.out.println("msg len : " + msg.length() + " bit");
-            System.out.println(msg);
+            //System.out.println(msg);
             
-            File input = new File("D:\\AFIK\\Project\\Steganografi\\lena.bmp");
+            File input = new File("D:\\AFIK\\Project\\Steganografi\\baboon.bmp");
             BufferedImage cover = ImageIO.read(input);
             fd.setCoverImage(cover);
             fd.setStegoImage(cover);
@@ -68,9 +68,9 @@ public class FourDiffStego {
             }
             else {
               fd.hideMessage();
-              ImageIO.write(fd.stegoImage, "bmp", new File("D:\\AFIK\\Project\\Steganografi\\lena_out.bmp"));
-              byte[] t = Files.readAllBytes(Paths.get("D:\\AFIK\\Project\\Steganografi\\lena.bmp"));
-              byte[] h = Files.readAllBytes(Paths.get("D:\\AFIK\\Project\\Steganografi\\lena_out.bmp"));
+              ImageIO.write(fd.stegoImage, "bmp", new File("D:\\AFIK\\Project\\Steganografi\\baboon_out.bmp"));
+              byte[] t = Files.readAllBytes(Paths.get("D:\\AFIK\\Project\\Steganografi\\baboon.bmp"));
+              byte[] h = Files.readAllBytes(Paths.get("D:\\AFIK\\Project\\Steganografi\\baboon_out.bmp"));
               double psnr = fd.getPSNR(t, h);
               System.out.println("PSNR = " + psnr);
             }
@@ -104,7 +104,7 @@ public class FourDiffStego {
         for (int i=0; i<coverImage.getHeight(); i+=2) {
             for (int j=0; j<coverImage.getWidth(); j+=2) {
                 if((coverImage.getHeight() > i+1) && (coverImage.getWidth() > j+1) && !stop){
-                    System.out.println(offset + " " + i + " " + j);
+                    //System.out.println(offset + " " + i + " " + j);
                     newR = error; newB = error; newG = error;
                     if (!bf.isErrorBlock(returnRBlock(0,j,i))){
                         bf.setY(returnRBlock(1,j,i));
@@ -284,16 +284,16 @@ public class FourDiffStego {
     
     public void setBlock(int x, int y, int[] R, int[] G, int[] B){
         int RGB;
-        Color color1 = new Color(R[0],G[0],B[0]);
+        Color color1 = new Color(((int)R[0])%256,((int)G[0])%256,((int)B[0])%256);
         RGB = color1.getRGB();
         stegoImage.setRGB(x, y, RGB);
-        Color color2 = new Color(R[1],G[1],B[1]);
+        Color color2 = new Color(((int)R[1])%256,((int)G[1])%256,((int)B[1])%256);
         RGB = color2.getRGB();
         stegoImage.setRGB(x+1, y, RGB);
-        Color color3 = new Color(R[2],G[2],B[2]);
+        Color color3 = new Color(((int)R[2])%256,((int)G[2])%256,((int)B[2])%256);
         RGB = color3.getRGB();
         stegoImage.setRGB(x, y+1, RGB);
-        Color color4 = new Color(R[3],G[3],B[3]);
+        Color color4 = new Color(((int)R[3])%256,((int)G[3])%256,((int)B[3])%256);
         RGB = color4.getRGB();
         stegoImage.setRGB(x+1, y+1, RGB);
     }
