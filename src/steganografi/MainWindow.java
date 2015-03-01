@@ -310,7 +310,6 @@ public class MainWindow extends javax.swing.JApplet {
                 {
                     txtKapasitas.setText(Integer.toString(nineDiffStego.getCapacityGrayscale()));
                     
-                    txtKapasitas.setText(Integer.toString(stego.getCapacityGray()- 8));
                     biCopy = new BufferedImage(image1.getWidth(), image1.getHeight(), BufferedImage.TYPE_INT_RGB);
                     for (int x = 0; x < image1.getWidth(); x++) {
                         for (int y = 0; y < image1.getHeight(); y++) {
@@ -640,17 +639,21 @@ public class MainWindow extends javax.swing.JApplet {
         fc.setDialogTitle("Select File 2");
         fc.showOpenDialog(this);
         File file2 = fc.getSelectedFile();
+        byte[] imageA = new byte[1];
+        byte[] imageB= new byte[1];
         
         try
         {
-            byte[] imageA = Files.readAllBytes(Paths.get(file1.getPath()));
-            byte[] imageB = Files.readAllBytes(Paths.get(file2.getPath()));
-            double psnr = stego.getPSNR(imageA, imageB);
+            imageA = Files.readAllBytes(Paths.get(file1.getPath()));
+            imageB = Files.readAllBytes(Paths.get(file2.getPath()));
+             double psnr = stego.getPSNR(imageA, imageB);
             JOptionPane.showMessageDialog(this, "Nilai PSNR:" + Double.toString(psnr));
+           
         } catch (Exception e)
         {   
-            JOptionPane.showMessageDialog(this, "Gagal menghitung PSNR: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Gagal menghitung PSNR: " + e.getMessage() + " Cause:"+ e.getCause());
         }
+        
     }//GEN-LAST:event_btnPSNRMouseClicked
 
     private void btnViewOriginalMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnViewOriginalMouseClicked
